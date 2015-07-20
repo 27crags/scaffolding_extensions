@@ -72,7 +72,7 @@ module ScaffoldingExtensions::MetaModel
   # - :auto_complete: Hash containing the default options to use for the scaffold
   #   autocompleter (iv: @scaffold_auto_complete_options)
   SCAFFOLD_OPTIONS = {:text_to_string=>false, 
-    :table_classes=>{:form=>'formtable', :list=>'sortable', :show=>'sortable'},
+    :table_classes=>{:form=>'table formtable', :list=>'table table-condensed table-striped sortable', :show=>'table sortable'},
     :column_type_options=>{},
     :column_types=>{},
     :column_options=>{},
@@ -167,9 +167,10 @@ module ScaffoldingExtensions::MetaModel
   end
 
   # Whether to use autocompleting for linked associations. Defaults to whether the
-  # associated class uses auto completing.
+  # associated class uses auto completing.  Always false if scaffold_association_find_objects
+  # is overridden for the specific association.
   def scaffold_association_use_auto_complete(association)
-    scaffold_associated_class(association).scaffold_use_auto_complete
+    scaffold_associated_class(association).scaffold_use_auto_complete && !respond_to?("scaffold_#{association}_association_find_objects")
   end
 
   # Defaults to associations specified by scaffold fields that are autocompleting. Can be set with an instance variable.
@@ -433,7 +434,7 @@ module ScaffoldingExtensions::MetaModel
 
     # Don't set any fields left blank by the user
     h = {}
-    attributes.each{|k,v| h[k] = v unless v.blank?}
+    attributes.each {|k,v| h[k] = v unless v.to_s.strip.empty?}
 
     scaffold_set_attributes(object, h)
     object
@@ -565,7 +566,7 @@ module ScaffoldingExtensions::MetaModel
         if allowed_attributes.include?(k)
           h[k] = v
         elsif convert_attributes.include?(k)
-          h[k] = v.blank? ? '' : v.to_i.to_s
+          h[k] = v.to_s.strip.empty? ? '' : v.to_i.to_s
         end
       end
       h

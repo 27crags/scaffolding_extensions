@@ -78,7 +78,7 @@ module ScaffoldingExtensions::MetaActiveRecord
     fields = columns.reject{|c| c.primary || c.name =~ /(\A(created|updated)_at|_count)\z/ || c.name == inheritance_column}.collect{|c| c.name}
     scaffold_all_associations.each do |reflection|
       next if reflection.macro != :belongs_to || reflection.options.include?(:polymorphic)
-      fields.delete(reflection.primary_key_name)
+      fields.delete(reflection.foreign_key)
       fields.push(reflection.name.to_s)
     end
     @scaffold_fields = fields.sort.collect{|f| f.to_sym}
@@ -86,7 +86,7 @@ module ScaffoldingExtensions::MetaActiveRecord
   
   # The foreign key for the given reflection
   def scaffold_foreign_key(reflection)
-    reflection.primary_key_name
+    reflection.foreign_key
   end
   
   # Retrieve a single model object given an id
@@ -96,14 +96,36 @@ module ScaffoldingExtensions::MetaActiveRecord
 
   # Retrieve multiple objects given a hash of options
   def scaffold_get_objects(options)
-    options[:conditions] = scaffold_merge_conditions(options[:conditions])
-    find(:all, options)
+    records = self
+    if options[:include]
+      records = records.includes(*options[:include])
+      records = records.references(*options[:include]) if scaffold_use_references
+    end
+    records = records.order(*options[:order]) if options[:order]
+    records = records.limit(options[:limit]) if options[:limit]
+    records = records.offset(options[:offset]) if options[:offset]
+    conditions = options[:conditions]
+    if conditions && Array === conditions && conditions.length > 0
+      if String === conditions[0]
+        records = records.where(*conditions)
+      else
+        conditions.each do |cond|
+          next if cond.nil?
+          records = case cond
+            when Hash, String then records.where(cond)
+            when Array then records.where(*cond)
+            when Proc then records.where(&cond)
+          end
+        end
+      end
+    end
+    records.to_a
   end
 
   # Return the class, left foreign key, right foreign key, and join table for this habtm association
   def scaffold_habtm_reflection_options(association)
     reflection = reflect_on_association(association)
-    [reflection.klass, reflection.primary_key_name, reflection.association_foreign_key, reflection.options[:join_table]]
+    [reflection.klass, reflection.foreign_key, reflection.association_foreign_key, reflection.options[:join_table]]
   end
 
   # Returns a hash of values to be used as url parameters on the link to create a new
@@ -112,7 +134,7 @@ module ScaffoldingExtensions::MetaActiveRecord
   # the association's reflection's options.
   def scaffold_new_associated_object_values(association, record)
     reflection = reflect_on_association(association)
-    vals = {reflection.primary_key_name=>record.id}
+    vals = {reflection.foreign_key=>record.id}
     vals["#{reflection.options[:as]}_type"] = name if reflection.options.include?(:as)
     vals
   end
@@ -139,37 +161,18 @@ module ScaffoldingExtensions::MetaActiveRecord
     table_name
   end
 
-  private
-    # Merge an array of conditions into a single condition array
-    def scaffold_merge_conditions(conditions)
-      new_conditions = [[]]
-      if Array === conditions
-        if conditions.length == 0 || (conditions.length == 1 && conditions[0].nil?)
-          nil
-        elsif Array === conditions[0]
-          conditions.each do |cond|
-            next unless cond
-            new_conditions[0] << cond.shift
-            cond.each{|c| new_conditions << c}
-          end
-          if new_conditions[0].length > 0
-            new_conditions[0] = "(#{new_conditions[0].join(") AND (")})"
-            new_conditions
-          else
-            nil
-          end
-        else
-          conditions
-        end
-      else
-        conditions
-      end
-    end
+  # Whether to use references in addition to includes for eager loading.  This is
+  # necessary if you need to reference associated tables when filtering.
+  # Can be set with an instance variable. 
+  def scaffold_use_references
+    @scaffold_use_references ||= false
+  end
 
+  private
     # Updates associated records for a given reflection and from record to point to the
     # to record
     def scaffold_reflection_merge(reflection, from, to)
-      foreign_key = reflection.primary_key_name
+      foreign_key = reflection.foreign_key
       sql = case reflection.macro
         when :has_one, :has_many
           return if reflection.options[:through]

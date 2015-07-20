@@ -1,4 +1,13 @@
-= ScaffoldingExtensions
+= Consider Migrating to AutoForme
+
+While Scaffolding Extensions is still supported, there is a replacement
+named AutoForme[1] that provides mostly the same features while being much
+more flexible.  It currently supports Rails/Sinatra and Sequel, so if you
+are using those, it is recommended that you consider using AutoForme instead.
+
+1. http://autoforme.jeremyevans.net
+
+= Scaffolding Extensions
 
 Scaffolding Extensions provides a powerful and simple to use administrative
 interface to perform common actions on models.  It has the following features:
@@ -21,14 +30,14 @@ to better suit your needs.
 Scaffolding Extensions currently supports:
 
 * Web Frameworks
-  * Rails 3.0.3
-  * Ramaze 2010.06.18
+  * Rails 4.0.0
+  * Ramaze 2012.12.08
   * Camping 2.1
-  * Sinatra 1.1.0
-  * Rack 1.2.1
+  * Sinatra 1.4.3
+  * Rack 1.5.2
 * Object Relational Mappers
-  * ActiveRecord 3.0.3
-  * Sequel 3.19.0
+  * ActiveRecord 4.0.0
+  * Sequel 3.48.0
   * DataMapper 1.0.2 (see doc/datamapper.txt for details)
 * Javascript Libaries (used for Ajax/Autocompleting, default is now JQuery)
   * Prototype 1.6.0.3
@@ -55,15 +64,17 @@ Support for other web frameworks and ORMs can be added, see the
 controller_spec.txt and model_spec.txt files for the methods that need to be
 defined.
 
+The Scaffolding Extensions UI is now tab-based and requires Twitter Bootstrap
+to be fully functional (though the UI is still usable without it).
+
 You can get Scaffolding Extensions via git or as a gem:
 
 * git: git://github.com/jeremyevans/scaffolding_extensions.git
 * gem: sudo gem install scaffolding_extensions
-* demo: http://se-demo.heroku.com
-* github: http://github.com/jeremyevans/scaffolding_extensions
-* RDoc: http://scaffolding-ext.rubyforge.org
-* Bug Tracker: http://rubyforge.org/tracker/?atid=22169&group_id=5726&func=browse
-* Forum: http://rubyforge.org/forum/forum.php?forum_id=22403
+* demo: http://scaf-ext-demo.jeremyevans.net
+* GitHub: http://github.com/jeremyevans/scaffolding_extensions
+* RDoc: http://scaf-ext.jeremyevans.net
+* Issues: http://github.com/jeremyevans/scaffolding_extensions/issues
 
 == Quick Start
 
@@ -74,12 +85,13 @@ The recommended use of the plugin is to execute:
 inside of a controller.  We'll assume the path to the controller is /admin.
 
 Then go to the index page for the controller (e.g. http://website/admin).  
-You'll see a link to a management page for each of your models.  Each
-management page has links to browse, create, delete, edit, show, search, and
-merge pages for the model. The pages are usable right away, but you'll want to
-add some configuration code to your models to specify the default names to
-display in select boxes, attributes to show on the forms, associations to show,
-whether to use select boxes or autocompleting text boxes, etc..
+You'll see a link to pages for each of your models.  Clicking on those links
+takes you to the model's browse page, with tabs to access the create, delete,
+edit, show, search, and merge pages for the model. The pages are usable right
+away, but you'll want to add some configuration code to your models to specify
+the default names to display in select boxes, attributes to show on the forms,
+associations to show, whether to use select boxes or autocompleting text boxes,
+etc..
 
 == Customization
 
@@ -113,7 +125,7 @@ to edit).
 
 @scaffold_use_auto_complete turns on autocompleting for the model, instead
 of using select boxes (necessary for a decent response time if you have a large
-number of records). See the advanced.txt for more autocompleting options.
+number of records). See doc/advanced.txt for more autocompleting options.
 
 scaffold_name is an instance method that determines the name to use for each
 album inside those select boxes.
@@ -145,15 +157,19 @@ There are a ton of other customization options:
 * Control access to the model via a session variable (e.g. so a user can only
   see objects with a matching user_id)
 
-Consult advanced.txt and/or the RDoc if you would like more information on
+Consult doc/advanced.txt and/or the RDoc if you would like more information on
 these (and many other options).
 
 == Testing
 
-See the testing.txt file for details on the plugin's automated test suite and
+See doc/testing.txt for details on the plugin's automated test suite and
 Rails functional testing support.
 
 == Questions?
 
-Please post on the RubyForge forum if you have any questions about Scaffolding
-Extensions.
+Please post an issue in the GitHub issue tracker if you have questions that
+the existing documentation does not answer.
+
+== Author
+
+Jeremy Evans <code@jeremyevans.net>

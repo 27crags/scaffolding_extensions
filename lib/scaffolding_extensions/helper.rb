@@ -11,15 +11,17 @@ module ScaffoldingExtensions
         show_edit = read_only ? :show : :edit
         so = @scaffold_object
         soid = so.scaffold_id
+        default_action = @scaffold_options[:default_action]
         singular_name = @scaffold_options[:singular_name]
+        return '' unless klass.scaffold_associations.any?{|a| klass.scaffold_show_association_links?(a)}
         content = '<h3 class="scaffold_associated_records_header">Associated Records</h3>'
-        content << "<ul id='scaffolded_associations_#{singular_name}_#{soid}' class='#{klass.scaffold_association_list_class}'>\n"
+        content << "<ul id='scaffolded_associations_#{singular_name}_#{soid}' class='association_links #{klass.scaffold_association_list_class}'>\n"
         klass.scaffold_associations.each do |association| 
           next unless klass.scaffold_show_association_links?(association)
           class_name = klass.scaffold_associated_name(association)
           human_name = klass.scaffold_associated_human_name(association)
           content << "<li>"
-          content << scaffold_check_link(human_name, read_only, "manage_#{class_name}") 
+          content << scaffold_check_link(human_name, read_only, "#{default_action}_#{class_name}") 
           content << "\n "
           case klass.scaffold_association_type(association)
             when :one
@@ -50,13 +52,13 @@ module ScaffoldingExtensions
       # Simple button with label text that submits a form to the given url, options are
       # passed to scaffold_form.
       def scaffold_button_to(text, url, options={})
-        "#{scaffold_form(url, options)}\n<input type='submit' value='#{text}' />\n</form>"
+        "#{scaffold_form(url, options)}\n<input class=\"btn #{options[:class]}\" type='submit' value='#{text}' />\n</form>"
       end
       
       # Simple button with label text that submits a form via Ajax to the given action,
       # options are passed to scaffold_form_remote_tag.
       def scaffold_button_to_remote(text, action, options)  
-        "#{scaffold_form_remote_tag(action, options)}\n<input type='submit' value=#{text} />\n</form>"
+        "#{scaffold_form_remote_tag(action, options)}\n<input class=\"btn btn-primary\" type='submit' value=#{text} />\n</form>"
       end
       
       # If scaffolding didn't create the action, return the empty string if blank is true
@@ -163,7 +165,7 @@ module ScaffoldingExtensions
         soid = so.scaffold_id
         content = "<div class='habtm_ajax_add_associations' id='#{sn}_habtm_ajax_add_associations'>"
         klass.scaffold_habtm_associations.reject{|association| !scaffolded_method?("add_#{association}_to_#{sn}")}.each do |association|
-          content << "#{scaffold_form_remote_tag("add_#{association}_to_#{sn}", :id=>soid)}\n#{scaffold_habtm_ajax_tag("#{sn}_#{association}_id", so, sn, association)}\n<input name='commit' type='submit' value='Add #{klass.scaffold_associated_human_name(association).singularize}' /></form>\n"
+          content << "#{scaffold_form_remote_tag("add_#{association}_to_#{sn}", :id=>soid)}\n#{scaffold_habtm_ajax_tag("#{sn}_#{association}_id", so, sn, association)}\n<input name='commit' class=\"btn btn-primary\" type='submit' value='Add #{klass.scaffold_associated_human_name(association).singularize}' /></form>\n"
         end
         content << "</div><div class='habtm_ajax_remove_associations' id='#{sn}_habtm_ajax_remove_associations'><ul id='#{sn}_associated_records_list'>"
         klass.scaffold_habtm_associations.reject{|association| !scaffolded_method?("remove_#{association}_from_#{sn}")}.each do |association|
@@ -217,10 +219,10 @@ module ScaffoldingExtensions
         "<label for='#{id}'>#{h text}</label>"
       end
       
-      # 'a' tag with the content text.  action and options are passed to
+      # 'a' tag with the content text.  action and url_options are passed to
       # scaffold_url to get the href.
-      def scaffold_link(text, action, options={})
-        "<a href='#{scaffold_url(action, options)}'>#{h text}</a>"
+      def scaffold_link(text, action, url_options={}, tag_options={})
+        "<a #{"class=\"#{tag_options[:class]}\" " if tag_options[:class]}href='#{scaffold_url(action, url_options)}'>#{h text}</a>"
       end
       
       # Returns link to the scaffolded management page for the model if it was created by the scaffolding.
@@ -269,7 +271,7 @@ module ScaffoldingExtensions
         #{scaffold_form(scaffold_url("#{action}#{@scaffold_suffix}", options), :attributes=>scaffold_form_enctype(fields))}
         #{scaffold_model_field_tags(fields)}
         #{(yield content; content) if block_given?}
-        <input type='submit' value="#{@scaffold_submit_value || "#{action.capitalize} #{@scaffold_options[:singular_lc_human_name]}"}" />
+        <input class='btn btn-primary' type='submit' value="#{@scaffold_submit_value || "#{action.capitalize} #{@scaffold_options[:singular_human_name]}"}" />
         </form>
         END
       end
@@ -294,6 +296,19 @@ module ScaffoldingExtensions
       # true, creates a multi-select box.
       def scaffold_select_tag(name, collection, multiple = false)
         "<select name='#{name}#{scaffold_param_list_suffix if multiple}' id='#{name}' #{"multiple='multiple'" if multiple}>#{'<option></option>' unless multiple}#{collection.collect{|obj| "<option value='#{i = obj.scaffold_id}' id='#{name}_#{i}'>#{h obj.scaffold_name}</option>"}.join("\n")}</select>"
+      end
+      
+      def scaffold_tabs
+        content = '<ul class="nav nav-tabs">'
+        [["#{@scaffold_options[:plural_human_name]}", :browse], ["New", :new], ["Show", :show], ["Edit", :edit], ["Delete", :delete], ["Merge", :merge], ["Search", :search]].each do |text, action|
+          link = scaffold_check_link(text, true, "#{action}#{@scaffold_suffix}")
+          action = :destroy if action == :delete
+          content << '<li'
+          content << ' class="active"' if action == @scaffold_action
+          content << ">#{scaffold_raw(link)}</li>"
+        end
+        content << '</ul>'
+        scaffold_raw(content)
       end
       
       # Text field with scaffold autocompleting.  The id is the html id, and the model name and association

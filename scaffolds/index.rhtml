@@ -1,5 +1,7 @@
-<% @scaffold_title = 'Manage Models' %>
-<ul>
+<% @scaffold_title = 'Dashboard' %>
+<h1>Dashboard</h1>
+
+<ul class="models">
 <% @links.each do |link, human_name| %>
   <li><a href="<%= scaffold_url(link) %>"><%= human_name %></a></li>
 <% end %>

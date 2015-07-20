@@ -4,7 +4,7 @@ module ScaffoldingExtensions
       # ActionController::Base is generally used with Rails, which holds model files
       # in app/models/
       def model_files
-        @model_files ||= Dir["#{RAILS_ROOT}/app/models/*.rb"]
+        @model_files ||= Dir["#{Rails.root}/app/models/*.rb"]
       end
   end
 
@@ -13,7 +13,7 @@ module ScaffoldingExtensions
     private
       # ActionController::Base allows easy access to the CSRF token via token_tag
       def scaffold_token_tag
-        token_tag
+        token_tag(nil)
       end
 
       # Mark the output as safe for raw display
