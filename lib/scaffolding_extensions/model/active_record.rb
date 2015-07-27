@@ -75,7 +75,7 @@ module ScaffoldingExtensions::MetaActiveRecord
   # the foriegn keys with the association itself.  Can be set with an instance variable.
   def scaffold_fields(action = :default)
     return @scaffold_fields if @scaffold_fields
-    fields = columns.reject{|c| c.primary || c.name =~ /(\A(created|updated)_at|_count)\z/ || c.name == inheritance_column}.collect{|c| c.name}
+    fields = columns.reject{|c| c.name == primary_key || c.name =~ /(\A(created|updated)_at|_count)\z/ || c.name == inheritance_column}.collect{|c| c.name}
     scaffold_all_associations.each do |reflection|
       next if reflection.macro != :belongs_to || reflection.options.include?(:polymorphic)
       fields.delete(reflection.foreign_key)
