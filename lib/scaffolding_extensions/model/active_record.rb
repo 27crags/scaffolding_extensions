@@ -176,7 +176,7 @@ module ScaffoldingExtensions::MetaActiveRecord
       sql = case reflection.macro
         when :has_one, :has_many
           return if reflection.options[:through]
-          "UPDATE #{reflection.klass.table_name} SET #{foreign_key} = #{to} WHERE #{foreign_key} = #{from}#{" AND #{reflection.options[:as]}_type = #{sanitize_sql(name.to_s)}" if reflection.options[:as]}"
+          "UPDATE #{reflection.klass.table_name} SET #{foreign_key} = #{to} WHERE #{foreign_key} = #{from}#{" AND #{reflection.options[:as]}_type = '#{sanitize_sql(name.to_s)}'" if reflection.options[:as]}"
         when :has_and_belongs_to_many
           "UPDATE #{reflection.options[:join_table]} SET #{foreign_key} = #{to} WHERE #{foreign_key} = #{from}" 
         else
